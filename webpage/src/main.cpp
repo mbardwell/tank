@@ -92,6 +92,9 @@ void loop(){
               output0State = "off";
               digitalWrite(output0, LOW);
             }
+            if (header.indexOf("speed=") >= 0) {
+              Serial.println("speed detected");
+            }
 
             // Display the HTML web page
             client.println("<!DOCTYPE html><html>");
@@ -106,6 +109,8 @@ void loop(){
 
             // Web Page Heading
             client.println("<body><h1>ESP8266 Web Server</h1>");
+
+            client.println("<form> Speed (0-100): <input type=\"number\" name=\"speed\"> <input type=\"submit\" value=\"Submit\"> </form>");
 
             // Display current state, and ON/OFF buttons for GPIO 2
             client.println("<p>GPIO 2 - State " + output2State + "</p>");
