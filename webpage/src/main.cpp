@@ -16,6 +16,12 @@ WiFiServer server(80);
 
 // Variable to store the HTTP request
 String header;
+String read;
+bool value_available = false;
+String speed;
+long speed_value, counter;
+bool speed_check(long speed);
+bool speed_available(String read);
 
 // Auxiliar variables to store the current output state
 String output2State = "off";
@@ -63,6 +69,24 @@ void loop(){
         char c = client.read();             // read a byte, then
         Serial.write(c);                    // print it out the serial monitor
         header += c;
+
+        read += c;
+        if (value_available) {
+          speed = read;
+          speed_value = (long) strtol(speed.c_str(), (char **)NULL, 10);
+          if (counter++ > 1 && speed_check(speed_value)) {
+            value_available = false;
+            Serial.print("Speed_value: "); Serial.println(speed_value);
+            counter = 0;
+          }
+        }
+        // if (read == "GET /2/on?speed=") {
+        //   read = ""; // clear read variables
+        //   value_available = true; // set bool value
+        //   Serial.println("speed detected");
+        // }
+        value_available = speed_available(read);
+
         if (c == '\n') {                    // if the byte is a newline character
           // if the current line is blank, you got two newline characters in a row.
           // that's the end of the client HTTP request, so send a response:
@@ -91,9 +115,6 @@ void loop(){
               Serial.println("GPIO 0 off");
               output0State = "off";
               digitalWrite(output0, LOW);
-            }
-            if (header.indexOf("speed=") >= 0) {
-              Serial.println("speed detected");
             }
 
             // Display the HTML web page
@@ -150,4 +171,23 @@ void loop(){
     Serial.println("Client disconnected.");
     Serial.println("");
   }
+}
+
+bool speed_check(long speed) {
+  if ((50 < speed) || (speed < 100)) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+bool speed_available(String read) {
+  value_available = false;
+  if (read == "GET /2/on?speed=") { //  || read == "GET /2/off?speed=" || read == "GET /0/on?speed=" || read == "GET /0/off?speed="
+    read = ""; // clear read variables
+    value_available = true; // set bool value
+    Serial.println("speed detected");
+  }
+  return value_available;
 }
