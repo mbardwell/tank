@@ -1,1 +1,3 @@
 esp_tank/lib/passwords/passwords.h
+webpage/lib/passwords/passwords.h
+webpage_test/lib/passwords/passwords.h
