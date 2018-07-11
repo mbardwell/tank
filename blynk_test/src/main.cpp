@@ -1,4 +1,7 @@
 /*************************************************************
+  Download latest Blynk library here:
+    https://github.com/blynkkk/blynk-library/releases/latest
+
   Blynk is a platform with iOS and Android apps to control
   Arduino, Raspberry Pi and the likes over the Internet.
   You can easily build graphic interfaces for all your
@@ -10,162 +13,87 @@
     Follow us:                  http://www.fb.com/blynkapp
                                 http://twitter.com/blynk_app
 
+  Blynk library is licensed under MIT license
   This example code is in public domain.
 
  *************************************************************
-  Project setup in the Blynk app:
-    Value Display widget on V2
 
+  You’ll need:
+   - Blynk App (download from AppStore or Google Play)
+   - ESP8266 board
+   - Decide how to connect to Blynk
+     (USB, Ethernet, Wi-Fi, Bluetooth, ...)
+
+  There is a bunch of great example sketches included to show you how to get
+  started. Think of them as LEGO bricks  and combine them as you wish.
+  For example, take the Ethernet Shield sketch and combine it with the
+  Servo example, or choose a USB sketch and add a code from SendData
+  example.
  *************************************************************/
 
+/* Comment this out to disable prints and save space */
+#define BLYNK_PRINT Serial
+
+
 #include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
 #include <passwords.h>
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-const char auth[] = authtoken;
+char auth[] = _AUTHTOKEN;
 
-// Network settings
-const char ssid[] = SSID;
-const char pass[] = PASS;
-
-// Blynk cloud server
-const char* host = "blynk-cloud.com";
-unsigned int port = 8080;
-
-WiFiClient client;
-
-// Start the WiFi connection
-void connectNetwork()
-{
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, pass);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println();
-  Serial.println("WiFi connected");
-}
-
-bool httpRequest(const String& method,
-                 const String& request,
-                 String&       response)
-{
-  Serial.print(F("Connecting to "));
-  Serial.print(host);
-  Serial.print(":");
-  Serial.print(port);
-  Serial.print("... ");
-  if (client.connect(host, port)) {
-    Serial.println("OK");
-  } else {
-    Serial.println("failed");
-    return false;
-  }
-
-  client.print(method); client.println(F(" HTTP/1.1"));
-  client.print(F("Host: ")); client.println(host);
-  client.println(F("Connection: close"));
-  if (request.length()) {
-    client.println(F("Content-Type: application/json"));
-    client.print(F("Content-Length: ")); client.println(request.length());
-    client.println();
-    client.print(request);
-  } else {
-    client.println();
-  }
-
-  //Serial.println("Waiting response");
-  int timeout = millis() + 5000;
-  while (client.available() == 0) {
-    if (timeout - millis() < 0) {
-      Serial.println(">>> Client Timeout !");
-      client.stop();
-      return false;
-    }
-  }
-
-  //Serial.println("Reading response");
-  int contentLength = -1;
-  while (client.available()) {
-    String line = client.readStringUntil('\n');
-    line.trim();
-    line.toLowerCase();
-    if (line.startsWith("content-length:")) {
-      contentLength = line.substring(line.lastIndexOf(':') + 1).toInt();
-    } else if (line.length() == 0) {
-      break;
-    }
-  }
-
-  //Serial.println("Reading response body");
-  response = "";
-  response.reserve(contentLength + 1);
-  while (response.length() < contentLength && client.connected()) {
-    while (client.available()) {
-      char c = client.read();
-      response += c;
-    }
-  }
-  client.stop();
-  return true;
-}
+// Your WiFi credentials.
+// Set password to "" for open networks.
+char ssid[] = _SSID;
+char pass[] = _PASS;
 
 void setup()
 {
-  Serial.begin(9600);
-  delay(10);
-  Serial.println();
-  Serial.println();
+  pinMode(0, OUTPUT);
+  pinMode(2, OUTPUT);
 
-  connectNetwork();
+  // Debug console
+  Serial.begin(9600);
+
+  Blynk.begin(auth, ssid, pass);
+  // You can also specify server:
+  //Blynk.begin(auth, ssid, pass, "blynk-cloud.com", 80);
+  //Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,100), 8080);
 }
 
-void loop() {
-  String response;
+void loop()
+{
+  Blynk.run();
+  // You can inject your own code or combine it with other sketches.
+  // Check other examples on how to communicate with Blynk. Remember
+  // to avoid delay() function!
+}
 
-  unsigned long value = millis();
-
-  // Send value to the cloud
-  // similar to Blynk.virtualWrite()
-
-  Serial.print("Sending value: ");
-  Serial.println(value);
-
-  String putData = String("[\"") + value + "\"]";
-  if (httpRequest(String("PUT /") + auth + "/update/V2", putData, response)) {
-    if (response.length() != 0) {
-      Serial.print("WARNING: ");
-      Serial.println(response);
-    }
+BLYNK_WRITE(V0)
+{
+  int pinValue = param.asInt();
+  if (pinValue > 700) {
+    digitalWrite(0,1);
   }
-
-  // Read the value back
-  // similar to Blynk.syncVirtual()
-
-  Serial.println("Reading value");
-
-  if (httpRequest(String("GET /") + auth + "/get/V2", "", response)) {
-    Serial.print("Value from server: ");
-    Serial.println(response);
+  digitalWrite(0,0);
+}
+BLYNK_WRITE(V1)
+{
+  int pinValue = param.asInt();
+  if (pinValue > 700) {
+    digitalWrite(2,1);
   }
-
-  // Set Property
-  Serial.println("Setting property");
-
-  if (httpRequest(String("GET /") + auth + "/update/V2?label=" + value, "", response)) {
-    if (response.length() != 0) {
-      Serial.print("WARNING: ");
-      Serial.println(response);
-    }
-  }
-
-  // For more HTTP API, see http://docs.blynkapi.apiary.io
-
-  // Wait
-  delay(30000L);
+  digitalWrite(2,0);
+}
+BLYNK_WRITE(V2)
+{
+  int pinValue = param.asInt();
+}
+BLYNK_WRITE(V3)
+{
+  int pinValue = param.asInt();
+  Serial.print("V1 Slider value is: ");
+  Serial.println(pinValue);
+  digitalWrite(0, pinValue);
 }
