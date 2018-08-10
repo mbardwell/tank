@@ -1,5 +1,5 @@
 # tank: electrical
-* need to implement boost converter, DC motor drive, battery charger. Control handled by ESP8266 Feather Huzzah\
+* need to implement boost converter, DC motor drive, battery charger. Control handled by ESP8266 Feather Huzzah
 
 * constraints: cost (max tbd), size (4" x 4" x 1"h)
 
