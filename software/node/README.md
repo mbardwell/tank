@@ -9,9 +9,12 @@ This code is the first step of my 3D printed tank control project. I have alread
 Install using PlatformIO Library Manager
 
 ## Getting Started
-- joystick feature sends two analog values for one coordinated movement
+- Joystick feature sends two analog values for one coordinated movement
 - Button feature stalls tank when off
-- Slider feature
+- Slider feature provides a speed maximum
 
 ## Software development strategy
+- Get stall button working
 - Receive an analog movement value and hold it between sample periods
+- Map joystick values to PWM values based on speed outputs
+- Add more control with slider speed capping
