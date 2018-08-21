@@ -9,6 +9,12 @@
 
 /************** prototypes **************/
 void printAll(void);
+void stall();
+void moveFwd();
+void turnLeft();
+void turnRight();
+void updateMovement();
+int valueCheck(int);
 
 /************** constants **************/
 char auth[] = _AUTHTOKEN;
@@ -16,11 +22,12 @@ char ssid[] = _SSID;
 char pass[] = _PASS;
 
 const int LED = D0;
-const int PWM1 = D7;
-const int PWM2 = D8;
-int joyL = 0, joyR = 0, slider = 0, button = 0; // joystick variables
-int desiredfreq = 10; // in Hz
-float holdtimeL = 0, holdtimeR = 0;
+const int PWML = D7;
+const int PWMR = D8;
+int joyHorz = 0, joyVert = 0, slider = 10, button = 0; // joystick variables
+int desiredfreq = 1; // in Hz
+float holdtime = 0;
+bool V0flag = false, V1flag = false;
 
 /************** setup **************/
 void setup() {
@@ -29,12 +36,11 @@ void setup() {
   pinMode(LED, OUTPUT);
 
   // Initialize the output variables as outputs
-  pinMode(PWM1, OUTPUT);
-  pinMode(PWM2, OUTPUT);
+  pinMode(PWML, OUTPUT);
+  pinMode(PWMR, OUTPUT);
   analogWriteRange(100); // re-map analog values to 100
-  analogWriteFreq(1500);
-  analogWrite(PWM1, 0);
-  analogWrite(PWM2, 0);
+  analogWriteFreq(1500); // set PWM frequency
+  stall(); // start tank on stall
 
   Blynk.begin(auth, ssid, pass);
 }
@@ -42,29 +48,20 @@ void setup() {
 /************** start loop **************/
 void loop(){
   Blynk.run();
+  if (!button) stall();
 }
 
 /************** private functions **************/
 BLYNK_WRITE(V0)
 {
-  if (millis() - holdtimeL > (1000/desiredfreq)) {
-    joyL = map(param.asInt(), 0, 1023, 0, slider - 20);
-    if (button) analogWrite(PWM1, joyL);
-    else analogWrite(PWM1, 0);
-    printAll();
-    holdtimeL = millis();
-  }
+  joyHorz = map(param.asInt(), 0, 1023, -512, 512);
+  updateMovement();
 }
 
 BLYNK_WRITE(V1)
 {
-  if (millis() - holdtimeR > (1000/desiredfreq)) {
-    joyR = map(param.asInt(), 0, 1023, 0, slider - 20);
-    if (button) analogWrite(PWM2, joyR);
-    else analogWrite(PWM2, 0);
-    printAll();
-    holdtimeR = millis();
-  }
+  joyVert = map(param.asInt(), 0, 1023, -512, 512);
+  updateMovement();
 }
 
 BLYNK_WRITE(V2)
@@ -76,16 +73,52 @@ BLYNK_WRITE(V3)
 {
   button = param.asInt();
   printAll();
-  digitalWrite(LED, button);
 }
 
 void printAll() {
-  Serial.print("joyL: ");
-  Serial.println(joyL);
-  Serial.print("joyR: ");
-  Serial.println(joyR);
-  Serial.print("Slider: ");
-  Serial.println(slider);
-  Serial.print("Button: ");
+  Serial.print("joyHorz: ");
+  Serial.print(joyHorz);
+  Serial.print(" joyVert: ");
+  Serial.print(joyVert);
+  Serial.print(" Slider: ");
+  Serial.print(slider);
+  Serial.print(" Button: ");
   Serial.println(button);
+}
+
+int valueCheck(int analogInput) {
+  // check for a negative input
+  if (analogInput < 0) return analogInput = 0;
+  else return analogInput;
+}
+
+void stall() {
+  analogWrite(PWMR, 0);
+  analogWrite(PWML, 0);
+}
+
+void moveFwd() {
+  analogWrite(PWMR, slider);
+  analogWrite(PWML, slider);
+}
+
+void turnLeft() {
+  analogWrite(PWMR, slider);
+  analogWrite(PWML, 0);
+}
+
+void turnRight() {
+  analogWrite(PWML, slider);
+  analogWrite(PWMR, 0);
+}
+
+void updateMovement() {
+  if (millis() - holdtime > (1000/desiredfreq)) {
+    if (joyVert > 300) moveFwd();
+    else if (joyHorz > 300) turnRight();
+    else if (joyHorz < -300) turnLeft();
+    else stall();
+    printAll();
+    holdtime = millis();
+  }
 }
