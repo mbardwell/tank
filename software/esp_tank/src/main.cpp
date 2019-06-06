@@ -4,9 +4,28 @@
 
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
-#include <passwords.h>
+// #include "passwords.h"
 
-// You should get Auth Token in the Blynk App.
+// #define lab
+#define robocar
+
+#ifdef lab
+  #define _SSID "lab"
+  #define _PASS "rettontancep62"
+#endif
+#ifdef home
+  #define _SSID "PMW"
+  #define _PASS "MmeAllard"
+#endif
+#ifdef robocar
+  #define _SSID "robocar"
+  #define _PASS "letsbuildrobots"
+#endif
+
+#define _AUTHTOKEN "b0033467134c43ce9aa74f5c4e8206ce"
+
+// You should get Auth Token emailed to you when you 
+// make a Blynk account.
 // Go to the Project Settings (nut icon).
 char auth[] = _AUTHTOKEN;
 
